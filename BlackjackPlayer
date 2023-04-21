@@ -1,0 +1,491 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.Arrays;
+
+class BlackjackWithInput{
+    
+    private boolean done; //general information for my code such as done to quit the game
+    private DataInputStream dis; //dis to get input
+    private DataOutputStream dos; //dos to shoot it out
+    private Socket socket;
+    private static int numCards = 10;
+    private static int numAces = 3;
+    private static int numRoyal = 2;
+    private int numAcesIHave = 0;
+    private int numRoyalIHave = 0;
+    private double blackjackHopes;
+    private static int winsInARow = 0;
+    private static int lossesInARow = 0;
+    private static int money;
+    private static boolean splitted = false;
+    private static int twos = 1;
+    private static int threes = 1;
+    private static int fours = 0;
+    private static int fives = 1;
+    private static int sixes = 1;
+    private static int sevens = 0;
+    private static int eights = 0;
+    private static int nines = 1;
+    private static int tens = 0;
+
+    String input = "";
+
+    
+    private void start() { //this is the start of the game and continues it. It looks at every little input that was given
+    //If it's login we respond appropriately, in this case it's set automatically to my information due to me only running it
+        
+        //try {
+            while (done == false) {
+                Scanner scan = new Scanner(System.in);
+                while (scan.hasNext()){
+                    input = "";
+                    input += scan.next();
+                }
+                //String input = dis.readUTF();
+                if (input.contains("login")) {
+                    String logging = "MichaelBooyers:Byers";
+                    System.out.println(logging);
+                    //dos.writeUTF(logging);
+                    //dos.flush();
+                } else if (input.contains("bet")) {
+                    String[] myBet = input.split(":");
+                    int amount = bet(myBet);
+                    String bet = "bet:" + amount;
+                    System.out.println(bet);
+                    //dos.writeUTF(bet);
+                    //dos.flush();
+                } else if (input.contains("play")) {
+                    String[] myPlay = input.split(":");
+                    System.out.println(Arrays.toString(myPlay));
+                    String play = logic(myPlay);
+                    System.out.println(play);
+                    //dos.writeUTF(play);
+                    //dos.flush();
+                } else if (input.contains("status") || input.contains("push")) {
+                    if (input.contains("win")){
+                        lossesInARow = 0;
+                        winsInARow++;
+                        System.out.println(winsInARow);
+                    }else if(input.contains("lose") || input.contains("push")){
+                        winsInARow = 0;
+                        lossesInARow++;
+                        System.out.println(lossesInARow);
+
+                    }
+                } else if (input.contains("done")) {
+                    done = true;
+                    //close();
+                }
+            }
+        //} //catch (IOException io) {
+           // io.printStackTrace();
+        //}
+    }
+
+    private int bet(String[] givenInput) {
+    //it looks at the input given from the dealer. it takes the money, and starts to calculate the probability of black jack and runs through a series of bets, tuned to allow us not to bet over our amount, but depending on our play and wins/losses, we adjust our bets
+
+        String stringMoney = givenInput[1];
+        String[] cardsPlayed = new String[(givenInput.length) -3];
+        money = Integer.parseInt(stringMoney);
+        int myTotal = 0;
+        int bet = 0;
+        boolean noCards = false;
+        int y = 0;
+        blackjackHopes = 0;
+        numAces = 3;
+        numRoyal = 2;
+        twos = 1;
+        threes = 1;
+        fours = 1;
+        fives = 1;
+        sixes = 1;
+        sevens = 0;
+        eights = 0;
+        nines = 0;
+        tens = 0;
+        numAcesIHave = 0;
+        numRoyalIHave = 0;
+
+        for(int i = 3; i < givenInput.length; i++){
+            cardsPlayed[y] = givenInput[i];
+            y++;
+        }
+
+        for (String card : cardsPlayed) {
+
+            if(card.contains("2")){
+                twos--;
+            }else if(card.contains("3")){
+                threes--;
+            }else if(card.contains("4")){
+                fours--;
+            }else if(card.contains("5")){
+                fives--;
+            }else if(card.contains("6")){
+                sixes--;
+            }else if(card.contains("7")){
+                sevens--;
+            }else if(card.contains("8")){
+                eights--;
+            }else if(card.contains("9")){
+                nines--;
+            }else if(card.contains("10")){
+                tens--;
+            }
+        }
+
+        for (String card : cardsPlayed) {
+            if (card.contains("A") && myTotal <= 10){
+                numAces--;
+            }else if(card.contains("A") && myTotal > 10){
+                numAces--;
+            }else if(card.contains("J") || card.contains("Q") || card.contains("K")){
+                numRoyal--;
+            }
+        }
+
+        System.out.println(Arrays.toString(cardsPlayed));
+        numCards = twos + threes + fours + fives + sixes + sevens + eights + nines + tens + numAces + numRoyal;
+
+
+        try {
+            try {
+                blackjackHopes = probability(cardsPlayed);
+            } catch (IndexOutOfBoundsException index) {
+                noCards = true;
+                bet = 5;
+            }
+            if(money <= 5){
+                bet = 1;
+            }else{
+                if (noCards == false) {
+                    if (blackjackHopes * 100 >= 40.0){
+                        if (lossesInARow >= 2){
+                            if(money >= 750){
+                                bet = 10;
+                            }else if(money >= 100){
+                                bet = 3;
+                            }else if(money <=20 && money >= 6){
+                                bet = 2;
+                            }else{
+                                bet = 1;
+                            }
+                        }else{
+                            if(money >= 750){
+                                bet = 25;
+                            }else if(money >= 500){
+                                bet = 10;
+                            }else if(money >= 300){
+                                bet = 8;
+                            }else if(money >= 250){
+                                bet = 7;
+                            }else if(money >= 100){
+                                bet = 5;
+                            }else if(money <=20 && money >= 6){
+                                bet = 2;
+                            }else{
+                                bet = 1;
+                            }
+                        }
+                    }else if (winsInARow == 6) {
+                        winsInARow = 0;
+                        if(money >= 750){
+                            bet = 10;
+                        }else if(money >= 300){
+                            bet = 6;
+                        }else if(money >= 100){
+                            bet = 5;
+                        }else if(money >=6){
+                            bet = 2;
+                        }else{
+                            bet = 1;
+                        }
+                    }else if (lossesInARow == 3) {
+                        winsInARow = 0;
+                        if(money >= 750){
+                            bet = 5;
+                        }else if(money >= 100){
+                            bet = 2;
+                        }else if(money >=6){
+                            bet = 1;
+                        }else{
+                            bet = 1;
+                        }
+                    }else if(money >= 750){
+                          bet = 10;
+                    }else if(money >= 100){
+                        bet = 5;
+                    }else if(money <=20 && money >= 6){
+                        bet = 2;
+                    }else{
+                        bet = 1;
+                    }
+                }else{
+                    if(money >= 750){
+                        bet = 10;
+                    }else if(money >= 300){
+                        bet = 4;
+                    }else if(money >= 100){
+                        bet = 3;
+                    }else if(money <=20 && money >= 6){
+                        bet = 2;
+                    }else{
+                        bet = 1;
+                    }
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException array) {
+            array.printStackTrace();
+            return bet = 5; // or another default value if appropriate
+        }
+        return bet;
+    }
+    
+    private double probability(String[] cardsIUsed){ //calculates the probability of hitting blackjack as well as help count cards
+
+        String temp = "";
+        int i = 0;
+        for (String card : cardsIUsed){
+            temp = cardsIUsed[i];
+            if(temp.contains("J") || temp.contains("Q") || temp.contains("K")){
+                numRoyalIHave++;
+            }else if(temp.contains("A")){
+                numAcesIHave++;
+            }
+            i++;
+        }
+
+        numRoyal = numRoyal - numRoyalIHave;
+        numAces = numAces - numAcesIHave;
+        double aceProbability = (((double)numAces) / ((double)numCards));
+        double royalProbability = (((double)numRoyal) / ((double)numCards-1));
+        double probability = aceProbability * royalProbability;
+        return probability;
+    }
+
+    private String countingCards(int mine, int dealer, int totalCards, int[] availableCards){
+        int distance = mine - dealer;
+        String response = "";
+        int probOfCardsToMine = 0;
+        double probabilityCardWillBeatMe = 0.0;
+        if (distance <= 0){
+            response = "hit";
+        }else{
+            for(int i = distance; i < availableCards.length; i++){
+                probOfCardsToMine += availableCards[i];
+            }
+        }
+        probabilityCardWillBeatMe = (((double)probOfCardsToMine)/((double)totalCards));
+        if (probabilityCardWillBeatMe <= 30.0){
+            response = "stand";
+        }else{
+            response = "hit";
+        }
+        System.out.println("response: " + response);
+        System.out.println(distance);
+        System.out.println(probabilityCardWillBeatMe);
+        return response;
+    }
+
+    private String logic(String[] currentHold){ //will look at the input given from the dealer and take away the dealers only showing card, looks at my cards, and then proceeds to work from there
+        int dealerCard = 0;
+        int myTotal = 0;
+        String[] split = new String[(currentHold.length) - 4];
+        int y = 0;
+        String temp = "";
+        int intTemp = 0;
+        String myResponse = "";
+        boolean ace = false;
+        boolean dealerAce = false;
+
+        if(currentHold[2].contains("2")){
+            dealerCard += 2;
+            twos--;
+        }else if(currentHold[2].contains("3")){
+            dealerCard += 3;
+            threes--;
+        }else if(currentHold[2].contains("4")){
+            dealerCard += 4;
+            fours--;
+        }else if(currentHold[2].contains("5")){
+            dealerCard += 5;
+            fives--;
+        }else if(currentHold[2].contains("6")){
+            dealerCard += 6;
+            sixes--;
+        }else if(currentHold[2].contains("7")){
+            dealerCard += 7;
+            sevens--;
+        }else if(currentHold[2].contains("8")){
+            dealerCard += 8;
+            eights--;
+        }else if(currentHold[2].contains("9")){
+            dealerCard += 9;
+            nines--;
+        }else if(currentHold[2].contains("10")){
+            dealerCard += 10;
+            tens--;
+        }else if (currentHold[2].contains("A")){
+            dealerCard = 11;
+            dealerAce = true;
+            numAces--;
+        }else if(currentHold[2].contains("J") || currentHold[2].contains("Q") || currentHold[2].contains("K")){
+            dealerCard = 10;
+            numRoyal--;
+        }
+
+
+        for(int i = 4; i < currentHold.length; i++){
+            temp = currentHold[i];
+            split[y] = currentHold[i];
+            y++;
+        }
+
+        for (String card : split) {
+
+            if(card.contains("2")){
+                myTotal += 2;
+                twos--;
+            }else if(card.contains("3")){
+                myTotal += 3;
+                threes--;
+            }else if(card.contains("4")){
+                myTotal += 4;
+                fours--;
+            }else if(card.contains("5")){
+                myTotal += 5;
+                fives--;
+            }else if(card.contains("6")){
+                myTotal += 6;
+                sixes--;
+            }else if(card.contains("7")){
+                myTotal += 7;
+                sevens--;
+            }else if(card.contains("8")){
+                myTotal += 8;
+                eights--;
+            }else if(card.contains("9")){
+                myTotal += 9;
+                nines--;
+            }else if(card.contains("10")){
+                myTotal += 10;
+                tens--;
+            }
+        }
+
+        for (String card : split) {
+            if (card.contains("A") && myTotal <= 10){
+                myTotal += 11;
+                ace = true;
+                numAces--;
+            }else if(card.contains("A") && myTotal > 10){
+                myTotal += 1;
+                ace = true;
+                numAces--;
+            }else if(card.contains("J") || card.contains("Q") || card.contains("K")){
+                myTotal += 10;
+                numRoyal--;
+            }
+        }
+
+        numCards = twos + threes + fours + fives + sixes + sevens + eights + nines + tens + numAces + numRoyal;
+        int[] leftCards = {twos, threes, fours, fives, sixes, sevens, eights, nines, tens, numAces, numRoyal};
+
+        if(split.length < 3){ //at this point split isn't applicable
+            if(myTotal == 9 || myTotal == 10 || myTotal == 11 && ace == false && dealerAce == false){
+                myResponse = "double";
+            }else if (myTotal < 16){
+                myResponse = "hit";
+            }else if(myTotal >= 17){
+                myResponse = "stand";
+            }else if(myTotal == 16){
+                if(myTotal > dealerCard + 10){
+                    myResponse = countingCards(myTotal, dealerCard, numCards, leftCards);
+                }else if(myTotal <= dealerCard + 10){
+                    if(ace == true && dealerAce == false){
+                        myResponse = "double";
+                    }
+                    else{
+                        myResponse = "hit";
+                    }
+                }else{
+                    myResponse = "hit";
+                }
+            }
+        }else if(split.length == 3){
+            if(myTotal < 16){
+                myResponse = "hit";
+            }else if(myTotal == 16){
+                if(myTotal > dealerCard + 10){
+                    myResponse = countingCards(myTotal, dealerCard, numCards, leftCards);
+                }else{
+                    myResponse = "hit";
+                }
+            }else if(myTotal <= dealerCard + 10 && myTotal < 16){
+                    myResponse = "hit";
+            }else if(myTotal >= 17){
+                myResponse = "stand";
+            }
+        }else{
+            if(myTotal < 16){
+                myResponse = "hit";
+            }else if(myTotal == 16){
+                if(myTotal > dealerCard + 10){
+                    myResponse = countingCards(myTotal, dealerCard, numCards, leftCards);
+                }else{
+                    myResponse = "hit";
+                }
+            }else if(myTotal <= dealerCard + 10 && myTotal <16){
+                    myResponse = "hit";
+            }else if(myTotal >= 17){
+                myResponse = "stand";
+            }
+        }
+        System.out.println(Arrays.toString(split));
+        System.out.println(currentHold.length);
+        System.out.println(split.length);
+        System.out.println(myResponse);
+        System.out.println(dealerCard);
+        System.out.println(myTotal);
+        return myResponse;
+    }
+    
+    private void close() { 
+    //this is implemented and put into place once I am given "done"
+        
+        try {
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (IOException io) {
+            io.printStackTrace();
+        }
+    }
+    
+    public static void main(String[] args) { 
+    //this allows for user input into the command terminal there should be an error if I fail to input an ip address and port
+        
+        String ipAddress = args[0];
+        String ipPort = args[1];
+        
+        BlackjackWithInput player = new BlackjackWithInput();
+        player.done = false;
+        
+        //try {
+
+            //player.socket = new Socket(ipAddress , Integer.valueOf(ipPort));
+            //player.dis = new DataInputStream(player.socket.getInputStream());
+            //player.dos = new DataOutputStream(player.socket.getOutputStream());
+        player.start();
+
+        //} catch (IOException io) {
+
+            //io.printStackTrace();
+
+        //}
+    }
+}
