@@ -1,0 +1,15 @@
+fieldset {
+    padding: 15px;
+    border: 2px solid rgba(20, 40, 170, 0.8);
+    background-color: rgba(20, 40, 170, 0.1);
+}
+
+label {
+    display: inline-block;
+    width: 80px;
+}
+
+span {
+    display: inline-block;
+    border: 2px solid black;
+}

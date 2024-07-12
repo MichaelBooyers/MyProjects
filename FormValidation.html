@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Validation</title>
+    <link rel="stylesheet" type="text/css" href="FormValidation.css">
+</head>
+<body>
+    <h1>Form Validation</h1>
+    <form id="form">
+        <fieldset>
+            <legend>Form Validation</legend>
+            <label for="username">Username:</label>
+            <input type="username" id="username" placeholder="Enter username">
+            <span id="usernameError">Validation messages</span>
+            <br>
+            <br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter password">
+            <span id="passwordError">Validation messages</span>            
+            <hr>
+            <button type="submit" id="login">Login</button>
+            <button type="button" id="reset">Reset</button>
+        </fieldset>
+    </form>
+    <script src="FormValidation.js"></script>
+</body>
+</html>
